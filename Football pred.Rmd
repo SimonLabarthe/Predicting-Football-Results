@@ -1,0 +1,596 @@
+---
+title: "International Football Predictor"
+author: "LABARTHE Simon"
+output: pdf_document
+date: "2026-02-20"
+
+---
+
+# CODEBOOK
+
+## Identification 
+
+* `match_id` - Unique numeric identifier for each match
+* `date` - Date of the match (YYYY-MM-DD format)
+* `year` - Year of the match (extracted from date)
+* `country_name` - Name of the focal team
+* `opponent_name` - Name of the opposing team
+* `dyad_name` - Alphabetically sorted team pair identifier (e.g., "England-Germany")
+
+## Football variables
+
+* `home_result` - Match result from focal team's perspective (1=win, 0.5=draw, 0=loss)
+* `away_result` - Match result from opponent's perspective (1=win, 0.5=draw, 0=loss)
+* `goals_for` - Number of goals scored by focal team
+* `goals_against` - Number of goals conceded by focal team
+* `goal_difference` - Goals for minus goals against
+* `margin` - Absolute goal difference ($\vert$goals_for - goals_against$\vert$)
+* `home` - Home advantage indicator (1=home team, -1=away team, 0=neutral)
+* `hga` - Home ground advantage (100 if not neutral, 0 if neutral)
+* `tournament` - Name of the tournament/competition
+* `tournament_weight` - Importance weight assigned to tournament (60=World Cup, 50=continental cups, 40=qualifiers, 20=friendly)
+* `goal_differ_multiplier` - Multiplier based on margin of victory (1 for $\leq$ 1 goal, up to 1.75+ for blowouts)
+* `k` - Weighted importance score (tournament_weight * goal_differ_multiplier)
+* `k2` - Time-decayed importance score (k adjusted by years since match)
+* `city` - City where the match was played
+* `country` - Country where the match was played
+
+* `country_elo` - Focal team's Elo rating before the match
+* `opponent_elo` - Opponent's Elo rating before the match
+* `elo_diff` - Elo rating difference (country_elo - opponent_elo)
+* `home_update` - Elo update value for home team after match
+* `away_update` - Elo update value for away team after match
+
+* `total_matches` - Cumulative number of matches played by focal team up to this point
+* `wins` - Cumulative number of wins by focal team
+* `draws` - Cumulative number of draws by focal team
+* `losses` - Cumulative number of losses by focal team
+* `win_share` - Proportion of matches won (wins / total_matches)
+* `win_prob_naive` - Naive win probability including draws as half-wins ((wins + 0.5*draws) / total_matches)
+* `last5_result_avg` - Average match result over last 5 matches (1=win, 0.5=draw, 0=loss)
+* `last5_result_sum` - Sum of match results over last 5 matches (max 5)
+* `last_year_goals_for_avg` - Average goals scored per match in last 365 days
+* `last_year_goals_against_avg` - Average goals conceded per match in last 365 days
+* `last_3months_goals_for_avg` - Average goals scored per match in last 90 days
+* `last_3months_goals_against_avg` - Average goals conceded per match in last 90 days
+
+* `h2h_matches` - Cumulative number of matches played against this specific opponent
+* `h2h_wins` - Cumulative number of wins against this specific opponent
+* `h2h_draws` - Cumulative number of draws against this specific opponent
+* `h2h_losses` - Cumulative number of losses against this specific opponent
+* `h2h_win_rate` - Win rate against this specific opponent (h2h_wins / h2h_matches)
+* `h2h_points_per_game` - Average points per game against opponent (wins=3, draws=1)
+* `last5_vs_opponent_result_avg` - Average match result over last 5 matches against this specific opponent
+* `last5_vs_opponent_goals_for_avg` - Average goals scored over last 5 matches against this specific opponent
+* `last5_vs_opponent_goals_against_avg` - Average goals conceded over last 5 matches against this specific opponent
+
+* `opponent_home_result` - Match result from opponent's perspective
+* `opponent_goals_for` - Goals scored by opponent
+* `opponent_goals_against` - Goals conceded by opponent
+* `opponent_last5_result_avg` - Opponent's average match result over last 5 matches
+* `opponent_last_year_goals_for_avg` - Opponent's average goals scored per match in last 365 days
+* `opponent_last_year_goals_against_avg` - Opponent's average goals conceded per match in last 365 days
+* `opponent_win_share` - Opponent's proportion of matches won historically
+
+## Geopolitical variables 
+
+* `bicc_milper` - Military Personnel Index (BICC)
+* `bicc_milexp` - Military Expenditure Index (BICC)
+* `wdi_expmil` - Military expenditure as % of GDP (World Bank)
+* `wdi_pop` - Total population (World Bank)
+* `wdi_popurb` - Urban population (World Bank)
+* `wdi_birth` - Birth rate per 1,000 people (World Bank)
+* `wdi_death` - Death rate per 1,000 people (World Bank)
+* `wdi_mortinf` - Infant mortality per 1,000 live births (World Bank)
+* `wdi_lifexp` - Life expectancy at birth (World Bank)
+* `wpp_medianage` - Median age as of July 1 (UN World Population Prospects)
+* `wpp_sexratio` - Sex ratio (males per 100 females) (UN WPP)
+* `wdi_export` - Exports of goods and services as % of GDP (World Bank)
+* `wdi_import` - Imports of goods and services as % of GDP (World Bank)
+* `gle_exp` - Total exports in millions of current USD (Gleditsch)
+* `gle_imp` - Total imports in millions of current USD (Gleditsch)
+* `wdi_area` - Land area in square kilometers (World Bank)
+* `wdi_eneuse` - Energy use in kg of oil equivalent per capita (World Bank)
+* `vdem_polyarchy` - Democracy level index (V-Dem)
+* `ucdp_type3` - Number of internal armed conflicts (UCDP)
+
+* `opponent_bicc_milper` - Opponent's Military Personnel Index
+* `opponent_bicc_milexp` - Opponent's Military Expenditure Index
+* `opponent_wdi_expmil` - Opponent's military expenditure as % of GDP
+* `opponent_wdi_pop` - Opponent's total population
+* `opponent_wdi_popurb` - Opponent's urban population
+* `opponent_wdi_birth` - Opponent's birth rate per 1,000
+* `opponent_wdi_death` - Opponent's death rate per 1,000
+* `opponent_wdi_mortinf` - Opponent's infant mortality per 1,000
+* `opponent_wdi_lifexp` - Opponent's life expectancy at birth
+* `opponent_wpp_medianage` - Opponent's median age
+* `opponent_wpp_sexratio` - Opponent's sex ratio
+* `opponent_wdi_export` - Opponent's exports as % of GDP
+* `opponent_wdi_import` - Opponent's imports as % of GDP
+* `opponent_gle_exp` - Opponent's total exports in millions USD
+* `opponent_gle_imp` - Opponent's total imports in millions USD
+* `opponent_wdi_area` - Opponent's land area in sq km
+* `opponent_wdi_eneuse` - Opponent's energy use per capita
+* `opponent_vdem_polyarchy` - Opponent's democracy level
+* `opponent_ucdp_type3` - Opponent's number of internal armed conflicts
+
+* `milper_diff` - Difference in military personnel (focal - opponent)
+* `milexp_diff` - Difference in military expenditure index (focal - opponent)
+* `milexp_gdp_diff` - Difference in military expenditure % of GDP (focal - opponent)
+* `pop_ratio` - Log ratio of total population (log(focal_pop / opponent_pop))
+* `popurb_ratio` - Log ratio of urban population (log(focal_urban / opponent_urban))
+* `popurb_pct_diff` - Difference in urban population percentage
+* `birth_rate_diff` - Difference in birth rate (focal - opponent)
+* `death_rate_diff` - Difference in death rate (focal - opponent)
+* `infant_mort_diff` - Difference in infant mortality (focal - opponent)
+* `life_exp_diff` - Difference in life expectancy (focal - opponent)
+* `median_age_diff` - Difference in median age (focal - opponent)
+* `sex_ratio_diff` - Difference in sex ratio (focal - opponent)
+* `export_gdp_diff` - Difference in exports % of GDP (focal - opponent)
+* `import_gdp_diff` - Difference in imports % of GDP (focal - opponent)
+* `total_export_ratio` - Log ratio of total exports (log(focal_exports / opponent_exports))
+* `total_import_ratio` - Log ratio of total imports (log(focal_imports / opponent_imports))
+* `trade_openness_diff` - Difference in trade openness (exports+imports % of GDP)
+* `area_ratio` - Log ratio of land area (log(focal_area / opponent_area))
+* `energy_use_diff` - Difference in energy use per capita (focal - opponent)
+* `democracy_diff` - Difference in democracy level (focal - opponent)
+* `conflict_diff` - Difference in number of internal conflicts (focal - opponent)
+* `conflict_any` - Whether at least one team has internal conflict (Yes/No)
+* `home_advantage_geo` - Composite geopolitical home advantage score
+* `geo_data_complete` - Whether all geopolitical variables are available (TRUE/FALSE)
+* `geo_any_missing` - Whether any geopolitical data is missing (TRUE/FALSE)
+
+```{r, echo = F, message = F, warning = F}
+library(dplyr)
+library(elo)
+library(formattable)
+library(lubridate)
+library(readr)
+library(rvest)
+library(showtext)
+library(tidyverse)
+library(glue)
+```
+
+# DATA
+## Next match scrap
+```{r, echo = F, message = F, warning = F}
+# Pick URL
+url_futur <- "https://www.programmetv-foot.fr/calendrier/matchs-internationnaux"
+
+# Read the HTML page
+page <- read_html(url_futur)
+page
+
+# Extract the Data
+matches <- page |>
+  html_elements("div.div_match")
+
+home_team <- matches |> 
+  html_elements(".div_dom .club") |> 
+  html_text2()
+
+away_team <- matches |> 
+  html_elements(".div_ext .club") |> 
+  html_text2()
+
+datetime  <- matches |> 
+  html_elements("time") |> 
+  html_attr("datetime")
+
+# Build Data Frame
+df <- tibble(
+  home_team = home_team,
+  away_team = away_team,
+  date      = as.Date(datetime)
+)
+
+df
+```
+
+## Foot data 
+```{r, echo = F, message = F, warning = F}
+rm(list = ls())
+
+url_past  <- "https://raw.githubusercontent.com/martj42/international_results/master/results.csv"
+dyadic_data <- read_csv(url_past)
+
+dyadic_data <- dyadic_data %>%
+  mutate(
+    home_result = case_when(
+      home_score >  away_score ~ 1,
+      home_score == away_score ~ 0.5,
+      home_score <  away_score ~ 0
+    ),
+    away_result = case_when(
+      home_score <  away_score ~ 1,
+      home_score == away_score ~ 0.5,
+      home_score >  away_score ~ 0
+    ),
+    margin = abs(home_score - away_score)
+  ) %>%
+  drop_na(margin)
+
+dyadic_data <- dyadic_data %>%
+  mutate(
+    hga = 100 * !neutral,
+
+    tournament_weight = case_when(
+      tournament == "FIFA World Cup"                                    ~ 60,
+      tournament %in% c("Confederations Cup", "African Cup of Nations",
+                        "Copa America", "UEFA Euro", "AFC Asian Cup")   ~ 50,
+      str_detect(tolower(tournament), "qualification")                  ~ 40,
+      str_detect(tolower(tournament), " cup")                           ~ 40,
+      tournament %in% c("UEFA Nations League","CONCACAF Nations League")~ 40,
+      tournament == "Friendly"                                          ~ 20,
+      TRUE                                                              ~ 30
+    ),
+
+    goal_differ_multiplier = case_when(
+      margin <= 1 ~ 1,
+      margin == 2 ~ 1.5,
+      margin == 3 ~ 1.75,
+      margin >= 4 ~ 1.75 + (margin - 3) / 8
+    ),
+
+    k        = tournament_weight * goal_differ_multiplier,
+    k2       = tournament_weight * goal_differ_multiplier /
+                 0.1 * (year(today()) - year(date)) + 1,
+    match_id = row_number()
+  ) %>%
+  relocate(match_id)
+
+elo_model <- elo.run(
+  data = dyadic_data,
+  formula = home_result ~ adjust(home_team, hga) + away_team + k(k)
+)
+
+dyadic_data <- elo_model %>%
+  as_tibble() %>%
+  mutate(match_id = row_number()) %>%
+  select(
+    match_id,
+    home_update    = update.A,
+    away_update    = update.B,
+    home_elo_after = elo.A,
+    away_elo_after = elo.B
+  ) %>%
+  mutate(
+    elo_a    = home_elo_after - home_update,
+    elo_b    = away_elo_after - away_update,
+    elo_diff_dyadic = elo_a - elo_b
+  ) %>%
+  right_join(dyadic_data, by = "match_id")
+
+elo_model_lm <- lm(home_result ~ elo_diff_dyadic, data = dyadic_data)
+
+home_team_matches <- dyadic_data %>%
+  rename(
+    country_name = home_team,
+    opponent_name = away_team,
+    goals_for = home_score,
+    goals_against = away_score,
+    country_elo = elo_a, 
+    opponent_elo = elo_b, 
+  ) %>% 
+  mutate(
+    # Home team perspective
+    home_result = case_when(
+      goals_for > goals_against ~ 1,
+      goals_for == goals_against ~ 0.5,
+      goals_for < goals_against ~ 0
+    ),
+    away_result = case_when(
+      goals_for < goals_against ~ 1,
+      goals_for == goals_against ~ 0.5,
+      goals_for > goals_against ~ 0
+    ),
+    elo_diff = country_elo - opponent_elo,
+    goal_difference = goals_for - goals_against, 
+    home = ifelse(neutral == FALSE, 1, 0), # 1 for advantage
+    year = as.numeric(format(date, "%Y")),     
+    dyad_name = paste0(pmin(country_name, opponent_name), "-", 
+                       pmax(country_name, opponent_name))
+  )
+
+away_team_matches <- dyadic_data %>%
+  rename(
+    country_name = away_team,
+    opponent_name = home_team,
+    goals_for = away_score,
+    goals_against = home_score,
+    country_elo = elo_b, 
+    opponent_elo = elo_a, 
+  ) %>% 
+  mutate(
+    # Away team perspective (recalculated!)
+    home_result = case_when(
+      goals_for > goals_against ~ 1,   # away team scored more = win
+      goals_for == goals_against ~ 0.5,
+      goals_for < goals_against ~ 0
+    ),
+    away_result = case_when(
+      goals_for < goals_against ~ 1,
+      goals_for == goals_against ~ 0.5,
+      goals_for > goals_against ~ 0
+    ),
+    elo_diff = country_elo - opponent_elo,
+    goal_difference = goals_for - goals_against, 
+    home = ifelse(neutral == FALSE, -1, 0), # -1 for disadvantage
+    year = as.numeric(format(date, "%Y")),     
+    dyad_name = paste0(pmin(country_name, opponent_name), "-", 
+                       pmax(country_name, opponent_name))
+  )
+
+monadic_matches <- bind_rows(home_team_matches, 
+                             away_team_matches) %>% 
+  select(
+    country_name,           # 1st column
+    year,     
+    date, 
+    opponent_name,          # 3rd column
+    dyad_name,              # 4th column
+    home_result, 
+    goals_for, 
+    goals_against, 
+    everything(), 
+    -neutral, 
+    -elo_diff_dyadic, 
+    -home_elo_after,
+    -away_elo_after) %>%
+  arrange(country_name, 
+          desc(year), 
+          desc(date))
+
+# Check for inconsistencies
+inconsistent <- monadic_matches %>%
+  mutate(
+    should_be_win = case_when(
+      goals_for > goals_against ~ 1,
+      goals_for == goals_against ~ 0.5,
+      goals_for < goals_against ~ 0
+    ),
+    is_inconsistent = (home_result != should_be_win)
+  ) %>%
+  filter(is_inconsistent == TRUE)
+
+# Should be 0 rows
+nrow(inconsistent)
+
+# If any inconsistencies remain, show them
+if(nrow(inconsistent) > 0) {
+  print(inconsistent %>% 
+          select(country_name, opponent_name, goals_for, goals_against, home_result, should_be_win))
+}
+
+library(zoo)  # for rolling calculations if needed
+
+monadic_data <- monadic_matches %>% 
+  arrange(country_name, desc(date)) %>%  # ensure chronological order per team
+  
+  # Group by country to create team-level rolling statistics
+  group_by(country_name) %>%
+  mutate(
+    # 1. Aggregate home_result of last 5 matches (all matches, not just home)
+    last5_result_avg = rollapplyr(home_result, width = 5, 
+                                   FUN = mean, fill = NA, align = "right"),
+    last5_result_sum = rollapplyr(home_result, width = 5, 
+                                   FUN = sum, fill = NA, align = "right"),
+    
+    # 2. Average goals for/against last year (365 days)
+    last_year_goals_for_avg = map_dbl(date, ~ {
+      matches_last_year = goals_for[between(date, .x - 365, .x - 1)]
+      if(length(matches_last_year) > 0) mean(matches_last_year) else NA
+    }),
+    last_year_goals_against_avg = map_dbl(date, ~ {
+      matches_last_year = goals_against[between(date, .x - 365, .x - 1)]
+      if(length(matches_last_year) > 0) mean(matches_last_year) else NA
+    }),
+    
+    # 3. Average goals for/against last 3 months (90 days)
+    last_3months_goals_for_avg = map_dbl(date, ~ {
+      matches_last_90d = goals_for[between(date, .x - 90, .x - 1)]
+      if(length(matches_last_90d) > 0) mean(matches_last_90d) else NA
+    }),
+    last_3months_goals_against_avg = map_dbl(date, ~ {
+      matches_last_90d = goals_against[between(date, .x - 90, .x - 1)]
+      if(length(matches_last_90d) > 0) mean(matches_last_90d) else NA
+    }),
+    
+    # 4. Naive win probability (win share)
+    total_matches = row_number(),
+    wins = cumsum(home_result == 1),
+    draws = cumsum(home_result == 0.5),
+    losses = cumsum(home_result == 0),
+    win_share = wins / total_matches,
+    win_prob_naive = (wins + 0.5 * draws) / total_matches,  # draws as half-win
+  ) %>%
+  ungroup() %>%
+  
+  # Now create opponent-specific rolling statistics (last 5 matches against SAME opponent)
+  group_by(country_name, opponent_name) %>%
+  mutate(
+    # 5. Last 5 matches against this specific opponent
+    last5_vs_opponent_result_avg = rollapplyr(home_result, width = 5, 
+                                               FUN = mean, fill = NA, align = "right"),
+    last5_vs_opponent_goals_for_avg = rollapplyr(goals_for, width = 5, 
+                                                  FUN = mean, fill = NA, align = "right"),
+    last5_vs_opponent_goals_against_avg = rollapplyr(goals_against, width = 5, 
+                                                      FUN = mean, fill = NA, align = "right"),
+    
+    # Cumulative head-to-head record
+    h2h_matches = row_number(),
+    h2h_wins = cumsum(home_result == 1),
+    h2h_draws = cumsum(home_result == 0.5),
+    h2h_losses = cumsum(home_result == 0),
+    h2h_win_rate = h2h_wins / h2h_matches,
+    h2h_points_per_game = (h2h_wins * 3 + h2h_draws * 1) / h2h_matches
+  ) %>%
+  ungroup() %>%
+  
+  # Now create SAME variables for the OPPONENT (by joining/merging)
+  # First, create opponent's perspective dataset
+  left_join(
+    monadic_matches %>%
+      select(date, country_name, opponent_name, home_result, goals_for, goals_against) %>%
+      rename(
+        opponent_goals_for = goals_for,
+        opponent_goals_against = goals_against,
+        opponent_home_result = home_result
+      ) %>%
+      group_by(opponent_name) %>%
+      arrange(opponent_name, date) %>%
+      mutate(
+        opponent_last5_result_avg = rollapplyr(opponent_home_result, width = 5, 
+                                                FUN = mean, fill = NA, align = "right"),
+        opponent_last_year_goals_for_avg = map_dbl(date, ~ {
+          matches_last_year = opponent_goals_for[between(date, .x - 365, .x - 1)]
+          if(length(matches_last_year) > 0) mean(matches_last_year) else NA
+        }),
+        opponent_last_year_goals_against_avg = map_dbl(date, ~ {
+          matches_last_year = opponent_goals_against[between(date, .x - 365, .x - 1)]
+          if(length(matches_last_year) > 0) mean(matches_last_year) else NA
+        }),
+        opponent_win_share = cumsum(opponent_home_result == 1) / row_number()
+      ) %>%
+      ungroup() %>%
+      select(date, country_name = opponent_name, opponent_name = country_name, 
+             starts_with("opponent_")),
+    by = c("date", "country_name", "opponent_name")
+  ) 
+```
+
+## Geopolitical data
+```{r, echo = F, message = F, warning = F}
+#qog <- read.csv("C:/Users/Simon Labarthe/OneDrive/Documents/UNI/ETH/26a/Method III/Project/qog_std_ts_jan26.csv") %>% 
+
+qog <- read.csv("C:/Users/Simon/OneDrive/Documents/UNI/ETH/26a/Method III/Project/qog_std_ts_jan26.csv") %>% 
+  rename(country_name = cname) %>% 
+  select(
+    country_name,
+    year,
+
+    bicc_milper,        # Military Personnel Index 
+    bicc_milexp,        # Military Expenditure Index 
+    wdi_expmil,         # Military expenditure % of GDP 
+
+    wdi_pop,            # Total Population
+    wdi_popurb,         # Urban Population
+
+    wdi_birth,          # Birth Rate (per 1,000)
+    wdi_death,          # Death Rate (per 1,000)
+    wdi_mortinf,        # Infant Mortality (per 1,000 live births)
+    wdi_lifexp,         # Life Expectancy at birth
+
+    wpp_medianage,      # Median Age as of 1 July (WPP) 
+    wpp_sexratio,       # Sex Ratio: males per 100 females (WPP) 
+
+
+    wdi_export,         # Exports of goods & services (% of GDP)
+    wdi_import,         # Imports of goods & services (% of GDP)
+    gle_exp,          # Total Exports in millions current USD (Gleditsch)
+    gle_imp,          # Total Imports in millions current USD (Gleditsch)
+
+    wdi_area,           # Land area in sq. km 
+
+    wdi_eneuse,         # Energy use (kg of oil equivalent per capita)
+
+   vdem_polyarchy,   # Democracy level
+
+    ucdp_type3        # Number of internal armed conflicts 
+  )
+```
+
+## Final dataset
+```{r, echo = F, message = F, warning = F}
+# First, join QoG data for BOTH home and away teams
+data <- monadic_data %>%
+  left_join(qog, by = c("country_name", "year")) %>%
+  left_join(
+    qog %>% 
+      rename_with(~paste0("opponent_", .x), -c(country_name, year)),
+    by = c("opponent_name" = "country_name", "year")
+  ) %>%
+  
+  # Create meaningful differences and ratios
+  mutate(
+    # MILITARY & POWER (subtraction makes sense - who has more military might)
+    milper_diff = bicc_milper - opponent_bicc_milper,
+    milexp_diff = bicc_milexp - opponent_bicc_milexp,
+    milexp_gdp_diff = wdi_expmil - opponent_wdi_expmil,
+    
+    # POPULATION (ratio makes more sense - log ratio for interpretation)
+    pop_ratio = log(wdi_pop / opponent_wdi_pop),  # log because 100M vs 10M = 2.3 vs 0.23
+    popurb_ratio = log(wdi_popurb / opponent_wdi_popurb),
+    popurb_pct_diff = (wdi_popurb / wdi_pop) - (opponent_wdi_popurb / opponent_wdi_pop),
+    
+    # DEMOGRAPHICS (subtraction for rates, ratio for ages)
+    birth_rate_diff = wdi_birth - opponent_wdi_birth,  # per 1000
+    death_rate_diff = wdi_death - opponent_wdi_death,
+    infant_mort_diff = wdi_mortinf - opponent_wdi_mortinf,
+    life_exp_diff = wdi_lifexp - opponent_wdi_lifexp,  # positive = home lives longer
+    median_age_diff = wpp_medianage - opponent_wpp_medianage,  # positive = home older
+    sex_ratio_diff = wpp_sexratio - opponent_wpp_sexratio,
+    
+    # ECONOMY (log ratios for scale)
+    export_gdp_diff = wdi_export - opponent_wdi_export,  # % of GDP difference
+    import_gdp_diff = wdi_import - opponent_wdi_import,
+    total_export_ratio = log(gle_exp / opponent_gle_exp),  # millions USD
+    total_import_ratio = log(gle_imp / opponent_gle_imp),
+    trade_openness_diff = (wdi_export + wdi_import) - (opponent_wdi_export + opponent_wdi_import),
+    
+    # GEOGRAPHY & ENERGY
+    area_ratio = log(wdi_area / opponent_wdi_area),
+    energy_use_diff = wdi_eneuse - opponent_wdi_eneuse,  # kg oil equivalent per capita
+    
+    # POLITICS (difference in democracy)
+    democracy_diff = vdem_polyarchy - opponent_vdem_polyarchy,  # positive = home more democratic
+    
+    # CONFLICT (difference in internal conflicts)
+    conflict_diff = ucdp_type3 - opponent_ucdp_type3,  # positive = home more conflict-prone
+    conflict_any = factor(ucdp_type3 > 0 | opponent_ucdp_type3 > 0, 
+                          levels = c(FALSE, TRUE), 
+                          labels = c("No conflict", "At least one has conflict")),
+    
+    # INTERACTION: Home advantage in democracy + development
+    home_advantage_geo = (home == 1) * (
+      (wdi_lifexp - opponent_wdi_lifexp) / 10 +  # life expectancy advantage (decades)
+      (wdi_pop - opponent_wdi_pop) / 1e7 +       # population advantage (10M units)
+      (wdi_expmil - opponent_wdi_expmil) / 5     # military spending advantage (% GDP)
+    )
+  ) %>%
+  
+  # Flag missing geopolitical data (common for smaller nations)
+  mutate(
+    geo_data_complete = !is.na(milper_diff) & !is.na(pop_ratio),
+    geo_any_missing = is.na(milper_diff) | is.na(pop_ratio)
+  )
+```
+
+
+# FUNCTIONS
+```{r}
+
+```
+
+## FIN-GIB
+```{r}
+f_elo <- 1603.627
+g_elo <- 1111.193
+d_elo <- f_elo - g_elo
+
+goals_for <- lm(goals_for ~ elo_diff, data = data)
+summary(goals_for)
+
+1.469e+00 + 2.759e-03 * d_elo # 2.827625
+```
+
+
+## Graphs
+```{r}
+data %>% 
+  ggplot(aes(x=elo_diff, y=goals_diff)) +
+  geom_point()
+```
+
+
