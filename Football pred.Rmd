@@ -3,7 +3,6 @@ title: "Predicting Football Results: Statistical Learnings Methods"
 author: "LABARTHE, S."
 output: pdf_document
 date: "2026"
-
 ---
 
 # CODEBOOK
@@ -140,7 +139,7 @@ date: "2026"
 * `geo_data_complete` - Whether all geopolitical variables are available (TRUE/FALSE)
 * `geo_any_missing` - Whether any geopolitical data is missing (TRUE/FALSE)
 
-```{r, echo = F, message = F, warning = F}
+```{r, echo = F eval = F, message = F, warning = F}
 library(dplyr)
 library(elo)
 library(formattable)
@@ -154,7 +153,7 @@ library(glue)
 
 # DATA
 ## Next match scrap
-```{r, echo = F, message = F, warning = F}
+```{r, eval = F, message = F, warning = F}
 # Pick URL
 url_futur <- "https://www.programmetv-foot.fr/calendrier/matchs-internationnaux"
 
@@ -189,7 +188,7 @@ df
 ```
 
 ## Foot data 
-```{r, echo = F, message = F, warning = F}
+```{r, eval = F, message = F, warning = F}
 rm(list = ls())
 
 url_past  <- "https://raw.githubusercontent.com/martj42/international_results/master/results.csv"
@@ -207,14 +206,8 @@ dyadic_data <- dyadic_data %>%
       home_score == away_score ~ 0.5,
       home_score >  away_score ~ 0
     ),
-    margin = abs(home_score - away_score)
-  ) %>%
-  drop_na(margin)
-
-dyadic_data <- dyadic_data %>%
-  mutate(
+    margin = abs(home_score - away_score), 
     hga = 100 * !neutral,
-
     tournament_weight = case_when(
       tournament == "FIFA World Cup"                                    ~ 60,
       tournament %in% c("Confederations Cup", "African Cup of Nations",
@@ -225,24 +218,22 @@ dyadic_data <- dyadic_data %>%
       tournament == "Friendly"                                          ~ 20,
       TRUE                                                              ~ 30
     ),
-
     goal_differ_multiplier = case_when(
       margin <= 1 ~ 1,
       margin == 2 ~ 1.5,
       margin == 3 ~ 1.75,
       margin >= 4 ~ 1.75 + (margin - 3) / 8
     ),
-
     k        = tournament_weight * goal_differ_multiplier,
-    k2       = tournament_weight * goal_differ_multiplier /
-                 0.1 * (year(today()) - year(date)) + 1,
+    k2       = (tournament_weight * goal_differ_multiplier) /
+                 (0.1 * (year(today()) - year(date)) + 1),
     match_id = row_number()
   ) %>%
   relocate(match_id)
 
 elo_model <- elo.run(
   data = dyadic_data,
-  formula = home_result ~ adjust(home_team, hga) + away_team + k(k)
+  formula = home_result ~ adjust(home_team, hga) + away_team + k(k2)
 )
 
 dyadic_data <- elo_model %>%
@@ -262,8 +253,6 @@ dyadic_data <- elo_model %>%
   ) %>%
   right_join(dyadic_data, by = "match_id")
 
-elo_model_lm <- lm(home_result ~ elo_diff_dyadic, data = dyadic_data)
-
 home_team_matches <- dyadic_data %>%
   rename(
     country_name = home_team,
@@ -274,17 +263,6 @@ home_team_matches <- dyadic_data %>%
     opponent_elo = elo_b, 
   ) %>% 
   mutate(
-    # Home team perspective
-    home_result = case_when(
-      goals_for > goals_against ~ 1,
-      goals_for == goals_against ~ 0.5,
-      goals_for < goals_against ~ 0
-    ),
-    away_result = case_when(
-      goals_for < goals_against ~ 1,
-      goals_for == goals_against ~ 0.5,
-      goals_for > goals_against ~ 0
-    ),
     elo_diff = country_elo - opponent_elo,
     goal_difference = goals_for - goals_against, 
     home = ifelse(neutral == FALSE, 1, 0), # 1 for advantage
@@ -303,17 +281,9 @@ away_team_matches <- dyadic_data %>%
     opponent_elo = elo_a, 
   ) %>% 
   mutate(
-    # Away team perspective (recalculated!)
-    home_result = case_when(
-      goals_for > goals_against ~ 1,   # away team scored more = win
-      goals_for == goals_against ~ 0.5,
-      goals_for < goals_against ~ 0
-    ),
-    away_result = case_when(
-      goals_for < goals_against ~ 1,
-      goals_for == goals_against ~ 0.5,
-      goals_for > goals_against ~ 0
-    ),
+    temp = home_result,
+    home_result = away_result,
+    away_result = temp,
     elo_diff = country_elo - opponent_elo,
     goal_difference = goals_for - goals_against, 
     home = ifelse(neutral == FALSE, -1, 0), # -1 for disadvantage
@@ -325,43 +295,21 @@ away_team_matches <- dyadic_data %>%
 monadic_matches <- bind_rows(home_team_matches, 
                              away_team_matches) %>% 
   select(
-    country_name,           # 1st column
+    country_name,           
     year,     
     date, 
-    opponent_name,          # 3rd column
-    dyad_name,              # 4th column
+    opponent_name,          
+    dyad_name,            
     home_result, 
     goals_for, 
     goals_against, 
     everything(), 
     -neutral, 
-    -elo_diff_dyadic, 
     -home_elo_after,
     -away_elo_after) %>%
   arrange(country_name, 
           desc(year), 
           desc(date))
-
-# Check for inconsistencies
-inconsistent <- monadic_matches %>%
-  mutate(
-    should_be_win = case_when(
-      goals_for > goals_against ~ 1,
-      goals_for == goals_against ~ 0.5,
-      goals_for < goals_against ~ 0
-    ),
-    is_inconsistent = (home_result != should_be_win)
-  ) %>%
-  filter(is_inconsistent == TRUE)
-
-# Should be 0 rows
-nrow(inconsistent)
-
-# If any inconsistencies remain, show them
-if(nrow(inconsistent) > 0) {
-  print(inconsistent %>% 
-          select(country_name, opponent_name, goals_for, goals_against, home_result, should_be_win))
-}
 
 library(zoo)  # for rolling calculations if needed
 
@@ -461,48 +409,55 @@ monadic_data <- monadic_matches %>%
 ```
 
 ## Geopolitical data
-```{r, echo = F, message = F, warning = F}
-#qog <- read.csv("C:/Users/Simon Labarthe/OneDrive/Documents/UNI/ETH/26a/Method III/Project/qog_std_ts_jan26.csv") %>% 
+```{r, eval = F, message = F, warning = F}
+library(readr)
 
-qog <- read.csv("C:/Users/Simon/OneDrive/Documents/UNI/ETH/26a/Method III/Project/qog_std_ts_jan26.csv") %>% 
-  rename(country_name = cname) %>% 
+url_data <- "https://raw.githubusercontent.com/SimonLabarthe/Predicting-Football-Results/main/qog.rds"
+
+qog <- read_rds(url_data) %>% 
+  rename(country_name = cname, 
+         country_code = ccodealp) %>% 
   select(
     country_name,
+    country_code,
     year,
 
-    bicc_milper,        # Military Personnel Index 
-    bicc_milexp,        # Military Expenditure Index 
-    wdi_expmil,         # Military expenditure % of GDP 
+    bicc_milper,        # Military Personnel Index (i = 162, t=1990-2023)
+    bicc_milexp,        # Military Expenditure Index (i = 162, t=1990-2023)
+    bicc_gmi,           # Global Militarization Index (i = 162, t=1990-2023)
+    wdi_expmil,         # Military expenditure % of GDP (i = 163, t=1960-2024))
 
-    wdi_pop,            # Total Population
-    wdi_popurb,         # Urban Population
+    wdi_pop,            # Total Population (i = 192, t = 1960-2024)
+    wdi_popurb,         # Urban Population (i = 192, t = 1960-2024)
 
-    wdi_birth,          # Birth Rate (per 1,000)
-    wdi_death,          # Death Rate (per 1,000)
-    wdi_mortinf,        # Infant Mortality (per 1,000 live births)
-    wdi_lifexp,         # Life Expectancy at birth
+    wdi_birth,          # Birth Rate (per 1,000) (i = 192, t = 1960-2024)
+    wdi_death,          # Death Rate (per 1,000) (i = 192, t = 1960-2024)
+    wdi_mortinf,        # Infant Mortality (per 1,000 live births) (i = 192, t = 1960-2024)
+    wdi_lifexp,         # Life Expectancy at birth (per 1,000 live births) (i = 192, t = 1960-2023)
 
-    wpp_medianage,      # Median Age as of 1 July (WPP) 
-    wpp_sexratio,       # Sex Ratio: males per 100 females (WPP) 
+    wpp_medianage,      # Median Age as of 1 July (WPP) (i = 192, t = 1950-2024)
+    wpp_sexratio,       # Sex Ratio: males per 100 females (WPP) (i = 192, t = 1950-2024)
 
 
-    wdi_export,         # Exports of goods & services (% of GDP)
-    wdi_import,         # Imports of goods & services (% of GDP)
-    gle_exp,          # Total Exports in millions current USD (Gleditsch)
-    gle_imp,          # Total Imports in millions current USD (Gleditsch)
+    wdi_export,         # Exports of goods & services (% of GDP) (i = 173, t = 1960-2024)
+    wdi_import,         # Imports of goods & services (% of GDP) (i = 173, t = 1960-2024)
+    wdi_gdpcapcon2015,  # GDP per capita (constant 2015 US dollar) (i = 191, t = 1960-2024)
+    wdi_gdpgr,          # GDP growth (annual %) (i = 191, t = 1961-2024)
 
-    wdi_area,           # Land area in sq. km 
+    wdi_area,           # Land area in sq. km (i = 191, t = 1961-2023)
 
-    wdi_eneuse,         # Energy use (kg of oil equivalent per capita)
+    vdem_polyarchy,     # Democracy level (i = 175, t = 1946-2024)
+    ht_colonial,        # Colonial Origin (i = 198, t = 1946-2025)
 
-   vdem_polyarchy,   # Democracy level
-
-    ucdp_type3        # Number of internal armed conflicts 
+    atop_number,        # Number of Alliances (i = 198, t = 1946-2025)
+  ) %>% 
+  mutate(
+    wdi_pop_log = log(wdi_pop)
   )
 ```
 
 ## Final dataset
-```{r, echo = F, message = F, warning = F}
+```{r, eval = F, message = F, warning = F}
 # First, join QoG data for BOTH home and away teams
 data <- monadic_data %>%
   left_join(qog, by = c("country_name", "year")) %>%
@@ -566,5 +521,4 @@ data <- monadic_data %>%
     geo_any_missing = is.na(milper_diff) | is.na(pop_ratio)
   )
 ```
-
 
