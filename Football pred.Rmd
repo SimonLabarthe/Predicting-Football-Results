@@ -1,8 +1,8 @@
 ---
-title: "International Football Predictor"
-author: "LABARTHE Simon"
+title: "Predicting Football Results: Statistical Learnings Methods"
+author: "LABARTHE, S."
 output: pdf_document
-date: "2026-02-20"
+date: "2026"
 
 ---
 
@@ -565,32 +565,6 @@ data <- monadic_data %>%
     geo_data_complete = !is.na(milper_diff) & !is.na(pop_ratio),
     geo_any_missing = is.na(milper_diff) | is.na(pop_ratio)
   )
-```
-
-
-# FUNCTIONS
-```{r}
-
-```
-
-## FIN-GIB
-```{r}
-f_elo <- 1603.627
-g_elo <- 1111.193
-d_elo <- f_elo - g_elo
-
-goals_for <- lm(goals_for ~ elo_diff, data = data)
-summary(goals_for)
-
-1.469e+00 + 2.759e-03 * d_elo # 2.827625
-```
-
-
-## Graphs
-```{r}
-data %>% 
-  ggplot(aes(x=elo_diff, y=goals_diff)) +
-  geom_point()
 ```
 
 
